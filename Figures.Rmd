@@ -1,0 +1,345 @@
+---
+title: "IC_Map"
+author: "Linda Menk"
+date: "27 11 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(httr)
+library(rlist)
+library(jsonlite)
+library(dplyr)
+library(sf)
+library(sp)
+library(rgdal)
+library(tmap)
+library(RColorBrewer)
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+
+
+World<-st_read("R:\\02_PROJECTS\\01_P_330001\\127_UNCHAIN\\03__Work\\WP1\\T1_3\\Manuscript\\Data\\ne_110m_admin_0_countries\\ne_110m_admin_0_countries.shp")
+
+
+Names_1<-c("France","Slovakia","Portugal","Ukraine","Hungary","Uruguay","Mauritania","Ethiopia","Burundi","Somalia","Kenya","Nigeria","Ghana","Mali","Pakistan","Vietnam","Japan","Russia","China","South Korea")
+Names_2<-c("Germany","Netherlands","Canada","India","Australia")
+Names_3<-c("Spain","Austria","Brazil","United States of America")
+Names_8<-c("United Kingdom")
+  
+World$count<-0
+World$count[World$SOVEREIGNT %in% Names_1]<- 1
+World$count[World$SOVEREIGNT %in% Names_2]<- 2
+World$count[World$SOVEREIGNT %in% Names_3]<- 3
+World$count[World$SOVEREIGNT %in% Names_8]<- 8
+
+#st_write(World, dsn="C:/Users/b1019175/Documents/UNCHAIN_studyareas_test2.shp", driver="ESRI Shapefile", overwrite_layer = TRUE)
+
+
+```
+
+```{r map, fig.height=7, fig.width=9}
+
+# Assign continent
+Europe<-c("France","Slovakia","Portugal","Ukraine","Hungary","Germany","Netherlands","Spain","Austria","United Kingdom")
+Africa<-c("Mauritania","Ethiopia","Burundi","Somalia","Kenya","Nigeria","Ghana","Mali")
+Asia<-c("Pakistan","Vietnam","Japan","Russia","China","South Korea","India")
+N.America<-c("United States of America","Canada")
+S.America<-c("Brazil", "Uruguay")
+Oceania<-c("Australia")
+
+World$continent<-NULL
+World$continent[World$SOVEREIGNT %in% Europe]<- "Europe"
+World$continent[World$SOVEREIGNT %in% Africa]<- "Africa"
+World$continent[World$SOVEREIGNT %in% Asia]<- "Asia"
+World$continent[World$SOVEREIGNT %in% N.America]<- "N.America"
+World$continent[World$SOVEREIGNT %in% S.America]<- "S.America"
+World$continent[World$SOVEREIGNT %in% Oceania]<- "Oceania"
+
+World$continent_nr<-NULL
+World$continent_nr[World$SOVEREIGNT %in% Europe]<- 1
+World$continent_nr[World$SOVEREIGNT %in% Africa]<- 2
+World$continent_nr[World$SOVEREIGNT %in% Asia]<- 3
+World$continent_nr[World$SOVEREIGNT %in% N.America]<- 4
+World$continent_nr[World$SOVEREIGNT %in% S.America]<- 5
+World$continent_nr[World$SOVEREIGNT %in% Oceania]<- 6
+
+#Remove all other countries from the dataset
+ed_exp4 <- subset(World, count != 0)
+
+
+#Make dataframe from remaining countries
+spatial<-data.frame("SOVEREIGNT"=ed_exp4$SOVEREIGNT, "count"=ed_exp4$count, "continent"=ed_exp4$continent, "cont_nr"=ed_exp4$continent_nr)
+#Remove duplicates
+spatial <- spatial[-c(10, 29), ]
+
+#Europe & World
+#Europe<-data.frame("Europe",3,"Overarching",7)
+#names(Europe)<-c("SOVEREIGNT","count","continent","cont_nr")
+#spatial<-rbind(spatial,Europe)
+
+#Global<-data.frame("Global",3,"Overarching",7)
+#names(Global)<-c("SOVEREIGNT","count","continent","cont_nr")
+#spatial<-rbind(spatial,Global)
+
+#Make the plot
+map<-ggplot(spatial,aes(x=count, y=reorder(SOVEREIGNT, count), fill = continent))+geom_bar(stat="identity", width=0.7)+ggtitle("Assessment location")+xlab("")+ylab("")+
+  scale_fill_wsj() +
+  theme_fivethirtyeight() +
+  facet_grid(spatial$cont_nr~., scales ="free",space="free")+
+  labs(fill = " ") +
+  theme(strip.text.y=element_blank())
+  
+map
+```
+
+```{r risk}
+
+AR4<-"Vulnerability (Adaptive Capacity + \n Exposure + Sensitivity) + Hazard"
+AR5<-"Vulnerability + \nExposure + \nHazard"
+None<-"Other/\nNone mentioned"
+NAP<-"Not applicable"
+Oth<-"Other"
+
+#Times risk concept
+types_df<-data.frame(
+  type=c(AR4, AR5, NAP, Oth, None),
+  count=c(9,11,6,3,9)
+  )
+
+p<-ggplot(data=types_df, aes(x=count, y=type)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=count), vjust=1.6, color="white", size=3.5, nudge_x = -1)+
+ ggtitle("Assessment scale")+xlab("Number of studies")+ylab(" ")
+p
+
+#Times per year
+years_df<-data.frame(year=as.factor(c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)),
+                     times=c(1,0,1,2,5,5,4,2,13,5))
+p<-ggplot(data=years_df, aes(x=year, y=times)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=times), vjust=1.6, color="white", size=3.5, nudge_x = 0,nudge_y=0)+
+ ggtitle("Articles per year")+xlab("Number of articles")+ylab("Year")+theme_solarized() 
+p
+
+df <- data.frame(
+  group = c(AR4, AR5, AR4, None, NAP, AR5, None, None, None, AR5, None, None, AR4, None, None, None, None, AR5, NAP, None, NAP, NAP, AR5, NAP, AR5, NAP, None, AR5, AR5, AR4, AR4, AR5, AR4, AR4, AR5, AR4, AR4, AR5),
+  value = as.factor(c(2015, 2018, 2018, 2014, 2016, 2018, 2015, 2018, 2018, 2017, 2018, 2018, 2012, 2018, 2015, 2018, 2010, 2016, 2017, 2014, 2019, 2013, 2015, 2019, 2018, 2019, 2013, 2019, 2016, 2014, 2014, 2018, 2014, 2016, 2018, 2018, 2015, 2019))
+  )
+df
+
+library(ggplot2)
+
+theme_update(plot.title = element_text(hjust = 0.5))
+
+#Risk conceptualisation plot
+p<-ggplot(data=df, aes(x=value, y=group)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=value), vjust=1.6, color="white", size=3.5, nudge_x = -1)+
+ ggtitle("Risk conceptualisation")+xlab("Number of studies")+ylab(" ")
+p
+
+
+
+ggplot(df, aes(x = value)) +
+    geom_bar(stat="count")
+#-----------
+tbl <- with(df, table(group,value))
+
+df<-data.frame(tbl)
+
+p<-ggplot(df,aes(factor(value), Freq, fill = group))+geom_bar()+ggtitle("Definitions over time")+xlab("Definition")+ylab("Usage per year")
+
+p<-ggplot(df,aes(x = value, y = Freq, fill = group))+geom_bar(stat="identity", width=0.5)+ggtitle("Risk concepts and number of articles")+xlab(" ")+ylab("Number of articles")+
+  scale_fill_wsj() +
+  theme_fivethirtyeight() +
+  labs(fill = "Risk concept")
+
+p
+
+
+# Stacked
+ggplot(df, aes(fill=value, x=value)) + 
+    geom_bar(position="stack", stat="identity", width = 1)
+# Horizontal bar plot
+#p + coord_flip()
+
+```
+
+```{r scale}
+scale <- data.frame(
+  group = c("Global","Continental","Multi-national","National","Sub-national","Urban area/City","Local","Infrastructure"),
+  value = c(3,3,2,13,11,7,3,2)
+  )
+
+p<-ggplot(scale,aes(x=value, y=reorder(group,value)))+geom_bar(stat="identity", width=0.5)+ggtitle("Assessment scale")+xlab("Times mentioned")+ylab("")+
+  scale_fill_wsj() +
+  theme_fivethirtyeight() +
+  geom_text(aes(label=value), vjust=1.6, color="white", size=3.5, nudge_x = -1, nudge_y = +0.3)
+
+p
+# Horizontal bar plot
+#p + coord_flip()
+
+```
+
+```{r risk}
+risk <- data.frame(
+  group = c("Sensitivity, Adaptive capacity", "IPCC AR5/DRR","Not specified","Other"),
+  value = c(8, 9, 16, 6)
+  )
+head(risk)
+
+library(ggplot2)
+
+theme_update(plot.title = element_text(hjust = 0.5))
+
+p<-ggplot(data=risk, aes(x=value, y=group)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=value), vjust=1.6, color="white", size=3.5, nudge_x = -1)+
+ ggtitle("Conceptionalisation of risk")+xlab("Number of studies")+ylab(" ")
+p
+
+
+# Horizontal bar plot
+#p + coord_flip()
+
+```
+
+```{r model}
+model <- data.frame(
+  group = c("Economic quantification", "Impact Chain","Network Analysis","SD/CLD/Scenario based","Other"),
+  value = c(7, 12, 5, 7,8)
+  )
+head(model)
+
+library(ggplot2)
+
+theme_update(plot.title = element_text(hjust = 0.5))
+
+p<-ggplot(data=model, aes(x=value, y=group)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=value), vjust=1.6, color="white", size=3.5, nudge_x = -1)+
+ ggtitle("Used modelling techniques")+xlab("Number of studies")+ylab(" ")
+p
+
+
+# Horizontal bar plot
+#p + coord_flip()
+
+```
+
+```{r knowledge}
+knowledge <- data.frame(
+  group = c("Participatory (incl. expert opinion, \nstakeholder experience, surveys)", "Literature","Existing models","Statistical, quantitative \ndata analysis"),
+  value = c(19, 17, 7, 17)
+  )
+
+p<-ggplot(knowledge,aes(x=value, y=group))+geom_bar(stat="identity", width=0.5)+ggtitle("Knowledge acquisition method")+xlab("Times mentioned")+ylab("")+
+  scale_fill_wsj() +
+  theme_fivethirtyeight() +
+  geom_text(aes(label=value), vjust=1.6, color="white", size=3.5, nudge_x = -1, nudge_y = +0.18)
+
+p
+# Horizontal bar plot
+#p + coord_flip()
+
+```
+```{r Treemap, fig.height=5}
+
+
+
+hazard<-data.frame(names=c("Changed precipitation patterns",
+                           "Changed temperature patterns",
+                           "Rapid onset events",
+                           "Heatwave",
+                           "Cold spell",
+                           "Sea Level Rise",
+                           #"Coastal erosion",
+                           "Storm surges/(Coastal) floods",
+                           "Storm/wind, heavy precipitation, snow",
+                           "(coastal) erosion/landslide",
+                           "Water scarcity",
+                           "Water quality deterioration",
+                           "Salinization",
+                           "Drought",
+                           "Desertification/forest dieback",
+                           "Overarching w/o specification"),
+                   value=c(2,2,2,7,2,2,18,9,8,2,1,1,11,2,9),
+                   level=as.character(c(20,20,10,1,1,2,0,0,0,1,1,0,1,1,5)))
+
+#Make the plot
+map<-ggplot(hazard,aes(x=value, y=reorder(names,value), fill=level))+geom_bar(stat="identity", width=0.7)+ggtitle("Assessed hazards/climate impacts")+xlab("")+ylab("")+
+  scale_fill_wsj() +
+  theme_fivethirtyeight() +
+  facet_grid(hazard$level~., scales ="free",space="free")+
+  labs(fill = " ") +
+  theme(legend.position = "none",strip.text.y=element_blank())
+  
+map
+```
+
+```{r stef}
+library(ggplot2)
+
+#load polygons
+library(sf)
+Hitze_P1rcp45q05 <- st_read("R:\\02_PROJECTS\\01_P_330001\\PKF330001_02_HotSpots\\01_Data\\Daten-vom-20201013\\Hotspots_Karten\\Index_shapefiles\\Hitzebelastung_P1rcp45q05_SmoothSBG_1.shp")
+plot(Hitze_P1rcp45q05)
+Hitze_P1rcp45q05_density <- density(Hitze_P1rcp45q05$Hitze_P1rc)
+plot(Hitze_P1rcp45q05_density)
+
+ggplot(Hitze_P1rcp45q05) +
+  geom_density(aes(Hitze_P1rc)) +
+  geom_vline(aes(xintercept = min(Hitze_P1rc)), color = 'red') +
+  geom_vline(aes(xintercept = mean(Hitze_P1rc)), color = 'blue') +
+  geom_vline(aes(xintercept = max(Hitze_P1rc)), color = 'green') +
+  geom_label(aes(y = 1.2, x = min(Hitze_P1rc), label = paste0('min = ',round(min(Hitze_P1rc),2)))) +
+  xlab('Insert what your variable means here!') +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(), 
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  )+
+theme_tufte()
+```
+```
+
+```{r chord diagram}
+# Create an adjacency matrix: 
+# a list of connections between 20 origin nodes, and 5 destination nodes:
+numbers <- sample(c(1:1000), 100, replace = T)
+data <- matrix( numbers, ncol=5)
+rownames(data) <- paste0("orig-", seq(1,20))
+colnames(data) <- paste0("dest-", seq(1,5))
+
+# Load the circlize library
+library(circlize)
+ 
+# Make the circular plot
+chordDiagram(data, transparency = 0.5)
+
+
+```
+
+```{r chord diagram 2}
+# Create an edge list: a list of connections between 10 origin nodes, and 10 destination nodes:
+origin <- paste0("orig ", sample(c(1:10), 20, replace = T))
+destination <- paste0("dest ", sample(c(1:10), 20, replace = T))
+
+origin<-c("Linda","Svenja","Maria","Linda","Jürgen")
+destination<-c("Andi","Ludwig","Jürgen","Svenja","Ludwig")
+data <- data.frame(origin, destination)
+
+# Transform input data in a adjacency matrix
+adjacencyData <- with(data, table(origin, destination))
+ 
+# Charge the circlize library
+library(circlize)
+ 
+# Make the circular plot
+chordDiagram(adjacencyData, transparency = 0.5)
+```
