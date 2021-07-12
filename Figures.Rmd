@@ -4,7 +4,24 @@ author: "Linda Menk"
 date: "27 11 2020"
 output: html_document
 ---
+# Content  
 
+1. Assessment location  
+2. Use of risk concept over time  
+3. Assessment scale  
+4. Model used  
+5. Knowledge source: Quantitative data (Modelled data, scenario data, satellite-derived or socio-economic data), qualitative data (Interviews, Workshops, Surveys...), literature (is an extensive literature review specifically mentioned)  
+
+6. Method: Bayesian Networks, Network Analysis, Impact Chains...
+7. Assessment scale & purpose (Who are the results directed at?)
+
+8. Challenges per method?
+
+9. Use of scenario/future oriented?
+
+a) Which specific combinations of methods have been used?; 
+b) for which purposes? --> Assessment scale  
+c) What were the specific challenges of each method?
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(httr)
@@ -19,9 +36,10 @@ library(RColorBrewer)
 library(ggplot2)
 library(ggthemes)
 library(tidyverse)
+library(scales)
 
 
-World<-st_read("R:\\02_PROJECTS\\01_P_330001\\127_UNCHAIN\\03__Work\\WP1\\T1_3\\Manuscript\\Data\\ne_110m_admin_0_countries\\ne_110m_admin_0_countries.shp")
+World<-st_read("R:\\100_GeoData\\00_World\\NaturalEarth\\110m_cultural\\ne_110m_admin_0_countries.shp")
 
 
 Names_1<-c("France","Slovakia","Portugal","Ukraine","Hungary","Uruguay","Mauritania","Ethiopia","Burundi","Somalia","Kenya","Nigeria","Ghana","Mali","Pakistan","Vietnam","Japan","Russia","China","South Korea")
@@ -30,17 +48,17 @@ Names_3<-c("Spain","Austria","Brazil","United States of America")
 Names_8<-c("United Kingdom")
   
 World$count<-0
-World$count[World$SOVEREIGNT %in% Names_1]<- 1
-World$count[World$SOVEREIGNT %in% Names_2]<- 2
-World$count[World$SOVEREIGNT %in% Names_3]<- 3
-World$count[World$SOVEREIGNT %in% Names_8]<- 8
+World$count[World$sovereignt %in% Names_1]<- 1
+World$count[World$sovereignt %in% Names_2]<- 2
+World$count[World$sovereignt %in% Names_3]<- 3
+World$count[World$sovereignt %in% Names_8]<- 8
 
 #st_write(World, dsn="C:/Users/b1019175/Documents/UNCHAIN_studyareas_test2.shp", driver="ESRI Shapefile", overwrite_layer = TRUE)
 
 
 ```
 
-```{r map, fig.height=7, fig.width=9}
+```{r map, fig.height=7, fig.width=12}
 
 # Assign continent
 Europe<-c("France","Slovakia","Portugal","Ukraine","Hungary","Germany","Netherlands","Spain","Austria","United Kingdom")
@@ -51,43 +69,43 @@ S.America<-c("Brazil", "Uruguay")
 Oceania<-c("Australia")
 
 World$continent<-NULL
-World$continent[World$SOVEREIGNT %in% Europe]<- "Europe"
-World$continent[World$SOVEREIGNT %in% Africa]<- "Africa"
-World$continent[World$SOVEREIGNT %in% Asia]<- "Asia"
-World$continent[World$SOVEREIGNT %in% N.America]<- "N.America"
-World$continent[World$SOVEREIGNT %in% S.America]<- "S.America"
-World$continent[World$SOVEREIGNT %in% Oceania]<- "Oceania"
+World$continent[World$sovereignt %in% Europe]<- "Europe"
+World$continent[World$sovereignt %in% Africa]<- "Africa"
+World$continent[World$sovereignt %in% Asia]<- "Asia"
+World$continent[World$sovereignt %in% N.America]<- "N.America"
+World$continent[World$sovereignt %in% S.America]<- "S.America"
+World$continent[World$sovereignt %in% Oceania]<- "Oceania"
 
 World$continent_nr<-NULL
-World$continent_nr[World$SOVEREIGNT %in% Europe]<- 1
-World$continent_nr[World$SOVEREIGNT %in% Africa]<- 2
-World$continent_nr[World$SOVEREIGNT %in% Asia]<- 3
-World$continent_nr[World$SOVEREIGNT %in% N.America]<- 4
-World$continent_nr[World$SOVEREIGNT %in% S.America]<- 5
-World$continent_nr[World$SOVEREIGNT %in% Oceania]<- 6
+World$continent_nr[World$sovereignt %in% Europe]<- 1
+World$continent_nr[World$sovereignt %in% Africa]<- 2
+World$continent_nr[World$sovereignt %in% Asia]<- 3
+World$continent_nr[World$sovereignt %in% N.America]<- 4
+World$continent_nr[World$sovereignt %in% S.America]<- 5
+World$continent_nr[World$sovereignt %in% Oceania]<- 6
 
 #Remove all other countries from the dataset
 ed_exp4 <- subset(World, count != 0)
 
 
 #Make dataframe from remaining countries
-spatial<-data.frame("SOVEREIGNT"=ed_exp4$SOVEREIGNT, "count"=ed_exp4$count, "continent"=ed_exp4$continent, "cont_nr"=ed_exp4$continent_nr)
+spatial<-data.frame("sovereignt"=ed_exp4$sovereignt, "count"=ed_exp4$count, "continent"=ed_exp4$continent, "cont_nr"=ed_exp4$continent_nr)
 #Remove duplicates
 spatial <- spatial[-c(10, 29), ]
 
 #Europe & World
 #Europe<-data.frame("Europe",3,"Overarching",7)
-#names(Europe)<-c("SOVEREIGNT","count","continent","cont_nr")
+#names(Europe)<-c("sovereignt","count","continent","cont_nr")
 #spatial<-rbind(spatial,Europe)
 
 #Global<-data.frame("Global",3,"Overarching",7)
-#names(Global)<-c("SOVEREIGNT","count","continent","cont_nr")
+#names(Global)<-c("sovereignt","count","continent","cont_nr")
 #spatial<-rbind(spatial,Global)
 
 #Make the plot
-map<-ggplot(spatial,aes(x=count, y=reorder(SOVEREIGNT, count), fill = continent))+geom_bar(stat="identity", width=0.7)+ggtitle("Assessment location")+xlab("")+ylab("")+
+map<-ggplot(spatial,aes(x=count, y=reorder(sovereignt, count), fill = continent))+geom_bar(stat="identity", width=0.7)+ggtitle("Assessment location")+xlab("")+ylab("")+
   scale_fill_wsj() +
-  theme_fivethirtyeight() +
+  theme_minimal() +
   facet_grid(spatial$cont_nr~., scales ="free",space="free")+
   labs(fill = " ") +
   theme(strip.text.y=element_blank())
@@ -148,13 +166,15 @@ ggplot(df, aes(x = value)) +
 #-----------
 tbl <- with(df, table(group,value))
 
+
 df<-data.frame(tbl)
 
 p<-ggplot(df,aes(factor(value), Freq, fill = group))+geom_bar()+ggtitle("Definitions over time")+xlab("Definition")+ylab("Usage per year")
 
 p<-ggplot(df,aes(x = value, y = Freq, fill = group))+geom_bar(stat="identity", width=0.5)+ggtitle("Risk concepts and number of articles")+xlab(" ")+ylab("Number of articles")+
   scale_fill_wsj() +
-  theme_fivethirtyeight() +
+  theme_minimal() +
+  theme(legend.position="bottom") +
   labs(fill = "Risk concept")
 
 p
@@ -176,7 +196,7 @@ scale <- data.frame(
 
 p<-ggplot(scale,aes(x=value, y=reorder(group,value)))+geom_bar(stat="identity", width=0.5)+ggtitle("Assessment scale")+xlab("Times mentioned")+ylab("")+
   scale_fill_wsj() +
-  theme_fivethirtyeight() +
+  theme_minimal() +
   geom_text(aes(label=value), vjust=1.6, color="white", size=3.5, nudge_x = -1, nudge_y = +0.3)
 
 p
@@ -230,6 +250,69 @@ p
 #p + coord_flip()
 
 ```
+```{}
+Network Analysis, 
+Network Analysis, 
+Structural Decomposition Analysis with Network Theory
+Network Theory in GIS with literature and government reports
+Multiplex Network Analysis
+Two-dimensional self-organizing neural network
+Network flowchart (result?)
+Network map (result?)
+
+Graph based approach 
+Directed graph 
+Deterministic graph
+
+Bayesian Networks
+Bayesian Network Analysis
+
+System dynamics model
+Hydrologic and system dynamics model
+Hydrological model
+Simulation-based approach
+Input-output tables
+Agent based model
+
+Standardized comparative analysis
+
+Causal chain, 
+Causal chain,
+Impact Chain (4x)
+Meta-analysis, Scenario development, Causal chains/loops
+Causal Loop Diagram
+Scenario planning process, Causal Loop Diagramming process
+Causal Chains/Loops based on Driver-Pressure-State-Impact-Response framework
+Co-creation process
+Focus group method
+
+
+Index methodologies
+Indicator based Vulnerability Assessment
+Climate vulnerability indicators
+Multiplicative framework based on simple utility function
+Fuzzy cognitive map
+Fuzzy risk raster map (result)
+Fuzzy logic algorithm
+
+Model
+Scour risk model
+Single system model and system-of-systems model
+Statistical and process based models
+Impact assessment models and uniform multi-sectoral computable general equilibrium model
+MRIA model (input-output based model)
+MRIO model
+IAP model (CLIMSAVE integrated assessent platform)
+SWAT model
+HAZUR tool
+Morans I
+Cost-benefit analysis
+Modelling framework
+
+Sensitivity analysis
+
+
+```
 
 ```{r knowledge}
 knowledge <- data.frame(
@@ -239,7 +322,7 @@ knowledge <- data.frame(
 
 p<-ggplot(knowledge,aes(x=value, y=group))+geom_bar(stat="identity", width=0.5)+ggtitle("Knowledge acquisition method")+xlab("Times mentioned")+ylab("")+
   scale_fill_wsj() +
-  theme_fivethirtyeight() +
+  theme_minimal() +
   geom_text(aes(label=value), vjust=1.6, color="white", size=3.5, nudge_x = -1, nudge_y = +0.18)
 
 p
@@ -260,25 +343,383 @@ hazard<-data.frame(names=c("Changed precipitation patterns",
                            #"Coastal erosion",
                            "Storm surges/(Coastal) floods",
                            "Storm/wind, heavy precipitation, snow",
-                           "(coastal) erosion/landslide",
+                           "(Coastal) erosion/landslide",
                            "Water scarcity",
                            "Water quality deterioration",
                            "Salinization",
                            "Drought",
                            "Desertification/forest dieback",
                            "Overarching w/o specification"),
-                   value=c(2,2,2,7,2,2,18,9,8,2,1,1,11,2,9),
+                   value=c(3,3,4,7,3,2,22,9,9,2,2,1,11,2,11),
                    level=as.character(c(20,20,10,1,1,2,0,0,0,1,1,0,1,1,5)))
 
 #Make the plot
 map<-ggplot(hazard,aes(x=value, y=reorder(names,value), fill=level))+geom_bar(stat="identity", width=0.7)+ggtitle("Assessed hazards/climate impacts")+xlab("")+ylab("")+
   scale_fill_wsj() +
-  theme_fivethirtyeight() +
+  theme_minimal() +
   facet_grid(hazard$level~., scales ="free",space="free")+
   labs(fill = " ") +
   theme(legend.position = "none",strip.text.y=element_blank())
   
 map
+```
+
+
+```{r selection process, fig.width=9,fig.height=7}
+selection <- data.frame(
+                            stringsAsFactors = FALSE,
+                                 check.names = FALSE,
+                          `Risk.assessment?` = c(0,1,1,
+                                                 0,0,1,0,1,0,1,
+                                                 1,0,1,0,0,0,1,1,
+                                                 1,1,1,1,1,1,0,0,
+                                                 1,0,0,0,0,1,0,0,
+                                                 0,0,0,1,0,1,0,
+                                                 0,0,0,1,1,0,0,0,
+                                                 0,0,0,0,0,0,0,1,
+                                                 0,0,0,0,1,1,1,1,
+                                                 1,0,0,0,0,0,0,
+                                                 1,0,0,0,1,0,0,0,
+                                                 0,0,1,0,0,0,0,0,
+                                                 0,0,0,0,1,0,1,0,
+                                                 0,1,0,0,0,0,1,
+                                                 0,0,1,0,0,1,0,0,
+                                                 1,0,1,1,0,1,1,1,
+                                                 1,0,1,0,1,0,0,1,
+                                                 0,1,0,0,1,0,
+                                                 1,1,0,0,1,1,1,0,
+                                                 1,0,1,0,1,0,0,1,
+                                                 0,1,0,0,1,0,0,
+                                                 1,0,0,0,1,0,1,
+                                                 1,1,0,1,1,1,0,0,
+                                                 1,0,1,0,0,0,1,0,
+                                                 0,1,0,0,1,1,0,1,
+                                                 1,0,0,0,0,0,0,
+                                                 1,1,0,1,1,1,0,0,
+                                                 0,0,0,1,1,0,0,0,
+                                                 0,0,1,0,0,1,1,0,
+                                                 1,1,1,1,0,1,0,
+                                                 0,0,1,0,0),
+                     `Systemic.perspective?` = c(0,1,
+                                                 0,1,0,1,0,1,
+                                                 0,0,1,1,1,1,
+                                                 0,0,1,1,1,1,1,
+                                                 1,0,1,0,0,0,
+                                                 1,1,1,0,1,1,
+                                                 1,0,0,0,1,1,
+                                                 1,0,0,1,1,0,
+                                                 0,0,0,0,1,1,0,
+                                                 1,1,0,1,1,1,
+                                                 0,0,1,1,1,1,
+                                                 1,1,1,0,0,0,
+                                                 0,0,1,0,0,0,
+                                                 0,1,0,1,1,0,1,
+                                                 0,0,0,0,0,1,
+                                                 0,0,0,1,0,1,
+                                                 0,0,1,1,1,0,
+                                                 0,1,0,0,1,0,
+                                                 1,0,0,0,1,0,1,
+                                                 0,1,0,1,1,1,
+                                                 1,0,0,1,0,1,
+                                                 1,1,1,1,1,
+                                                 1,0,1,1,1,0,1,
+                                                 0,0,0,1,1,1,
+                                                 1,0,1,0,0,
+                                                 0,1,1,0,0,0,
+                                                 0,0,0,0,0,1,0,
+                                                 1,1,1,1,1,1,
+                                                 1,0,1,1,0,1,
+                                                 0,0,0,1,0,0,
+                                                 1,1,1,1,1,0,
+                                                 1,1,1,0,1,1,1,
+                                                 0,0,1,1,1,1,
+                                                 1,0,0,1,0,0,
+                                                 1,1,1,1,1,0,
+                                                 0,1,1,1,1,1,
+                                                 0,1,1,1,1,0,1,
+                                                 1,0,0,0,0,1),
+  `CC.context?.(environmenta.aspect.of.cc)` = c(1,1,0,
+                                                 0,1,1,1,0,1,1,
+                                                 1,0,1,1,1,1,1,1,
+                                                 1,1,1,1,1,1,1,1,
+                                                 1,1,0,0,1,1,1,1,
+                                                 1,1,1,1,0,1,1,
+                                                 0,0,1,0,1,1,1,1,
+                                                 1,0,1,1,0,0,1,1,
+                                                 1,0,1,1,1,1,1,1,
+                                                 1,1,1,0,0,1,1,
+                                                 1,0,1,1,1,1,0,1,
+                                                 0,1,1,0,1,1,1,1,
+                                                 0,1,1,0,1,1,1,1,
+                                                 0,1,1,1,1,0,1,
+                                                 1,0,1,0,1,1,1,1,
+                                                 0,0,1,1,1,1,1,1,
+                                                 1,1,1,1,1,1,1,1,
+                                                 1,0,1,1,1,1,
+                                                 1,1,1,0,1,1,1,1,
+                                                 1,0,1,1,0,0,1,1,
+                                                 0,1,1,1,0,1,1,
+                                                 1,1,1,0,1,0,1,
+                                                 1,1,1,1,1,1,1,1,
+                                                 1,0,0,1,0,1,1,1,
+                                                 0,1,1,1,1,1,0,1,
+                                                 1,1,0,1,1,1,1,
+                                                 1,0,1,1,1,1,0,1,
+                                                 1,1,1,1,1,1,1,1,
+                                                 1,1,1,1,1,1,1,1,
+                                                 1,1,1,1,1,1,1,
+                                                 0,1,1,1,1),
+                               `Conceptua?` = c(0,0,0,
+                                                 0,1,0,1,1,0,0,
+                                                 0,0,0,0,1,0,1,0,
+                                                 0,0,0,0,0,0,1,1,
+                                                 0,0,1,0,1,0,1,1,
+                                                 1,1,0,0,0,1,0,
+                                                 0,0,0,0,0,1,0,0,
+                                                 0,0,1,0,0,0,1,0,
+                                                 0,1,1,0,1,0,0,0,
+                                                 0,0,1,0,1,1,0,
+                                                 0,1,0,1,1,0,0,0,
+                                                 0,0,0,0,0,1,1,0,
+                                                 0,0,1,1,0,0,0,0,
+                                                 0,0,0,0,1,0,0,
+                                                 0,0,0,0,0,1,1,1,
+                                                 0,0,0,0,1,0,0,0,
+                                                 1,0,0,1,0,1,0,0,
+                                                 0,0,0,0,1,0,
+                                                 0,0,1,0,0,1,0,0,
+                                                 0,0,0,1,0,0,0,0,
+                                                 0,0,1,0,0,0,0,
+                                                 0,1,0,0,0,1,0,
+                                                 0,0,0,0,0,0,1,0,
+                                                 0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,
+                                                 0,0,0,1,0,1,1,
+                                                 0,0,0,0,1,0,0,1,
+                                                 0,1,0,0,0,0,0,0,
+                                                 1,0,0,0,1,0,0,0,
+                                                 0,0,0,0,0,0,0,
+                                                 0,1,0,1,0)
+)
+
+selection_id <- cbind(ID = 1:nrow(selection), selection)
+
+
+selection_ra <- round(sum(selection$`Risk.assessment?`)/232*100)
+selection_sp <- round(sum(selection$`Systemic.perspective?`)/232*100)
+selection_cc <- round(sum(selection$`CC.context?.(environmenta.aspect.of.cc)`)/232*100)
+selection_cr <- round(sum(selection$`Conceptua?`)/232*100)
+
+group <- c("Risk assessment","Systemic prespective","Climate change context","Conceptual/Review")
+value <- c(selection_ra, selection_sp, selection_cc, selection_cr)
+
+data <- data.frame(group, value)
+
+
+theme_update(plot.title = element_text(hjust = 0.5))
+
+p<-ggplot(data=data, aes(x=value, y=reorder(group, value))) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=value), vjust=1.6, color="white", size=3.5, nudge_x = -4)+
+ ggtitle("Articles fitting inclusion/exclusion criteria")+xlab("% of articles")+ylab(" ")
+p
+
+#----Stacked Bar Chart
+
+selection_id$`Risk.assessment?`<-as.factor(selection_id$`Risk.assessment?`)
+selection_id$`Systemic.perspective?`<-as.factor(selection_id$`Systemic.perspective?`)
+selection_id$`CC.context?.(environmenta.aspect.of.cc)`<-as.factor(selection_id$`CC.context?.(environmenta.aspect.of.cc)`)
+selection_id$`Conceptua?`<-as.factor(selection_id$`Conceptua?`)
+
+a <- dplyr::count(selection_id, `Risk.assessment?`)
+b <- dplyr::count(selection_id, `Systemic.perspective?`)
+c <- dplyr::count(selection_id, `CC.context?.(environmenta.aspect.of.cc)`)
+d <- dplyr::count(selection_id, `Conceptua?`)
+
+
+
+kat <- c(1,1,2,2,3,3)
+value <- c(a$n[1], a$n[2], b$n[1], b$n[2], c$n[1], c$n[2])
+YN <- c("NO", "YES", "NO", "YES", "NO", "YES")
+criteria <- c("Human-centered risk, \n vulnerability or \nimpact assessment", "Human-centered risk, \n vulnerability or \nimpact assessment",  "Dynamics and causal \nstructures behind risk","Dynamics and causal \nstructures behind risk", "Climate change \ncontext", "Climate change \ncontext")
+
+stack_in <- data.frame(kat, value, YN, criteria)
+#library(data.table)
+
+
+inclusion <- ggplot(stack_in, aes(fill = YN, x=criteria, y=value, kat)) +
+  labs(title = "Step 3a: Included/Excluded on abstract", subtitle = "Inclusion criteria") +
+  geom_bar(position = "fill", stat = "identity") +
+  xlab("Inclusion/Exclusion criteria")+
+  ylab("") +
+  labs(fill = " ") +
+  theme(strip.text.y=element_blank()) +
+  #scale_x_discrete(labels = criteria) +
+  scale_y_continuous(labels = percent) +
+  #geom_text(aes(label=value)) +
+  scale_fill_wsj(name="Has this criterion been met?") +
+  theme_minimal() +
+  theme(legend.position="bottom")
+
+# exclusion-----
+kat <- c(4,4)
+value <- c( d$n[1], d$n[2])
+YN <- c("NO", "YES")
+criteria <- c("Concept or \nReview", "Concept or \nReview")
+
+stack_ex <- data.frame(kat, value, YN, criteria)
+
+exclusion <- ggplot(stack_ex, aes(fill = YN, x=criteria, y=value, kat)) +
+  #ggtitle("Abstract screening results") +
+  labs(subtitle = "Exclusion criteria") +
+  geom_bar(position = "fill", stat = "identity") +
+  xlab("Inclusion/Exclusion criteria")+
+  ylab("") +
+  labs(fill = " ") +
+  theme(strip.text.y=element_blank()) +
+  #scale_x_discrete(labels = criteria) +
+  scale_y_continuous(labels = percent) +
+  #geom_text(aes(label=value)) +
+  scale_fill_wsj() +
+  theme_minimal() +
+  theme(legend.position="bottom")
+
+exclusion
+library(png)
+library(patchwork)
+#my_image <- readPNG("R:\\02_PROJECTS\\01_P_330001\\127_UNCHAIN\\03__Work\\WP1\\T1_3\\Manuscript\\01_Review\\NewFigures\\Screening_results_final_v2.PNG")
+
+library(patchwork)
+inclusion + exclusion + #inset_element(p = my_image,
+                                      #left = 0,
+                                      #bottom = 0,
+                                      #right= 1,
+                                      #top=1) +
+  plot_layout(widths = c(2.5,1))
+ 
+
+```
+
+```{r inclusion points,  fig.width=12,fig.height=7}
+selection_id2 <-cbind(ID = 1:nrow(selection), selection)
+
+row_wise_sum <- selection_id2 %>% mutate(row_wise_sum = rowSums(.[2:4]))
+
+# Coerce to factor to count the number of occurrences
+row_wise_sum$row_wise_sum <- as.factor(row_wise_sum$row_wise_sum)
+
+# To filter where all the inclusion criteria are met
+traffic_light <- dplyr::count(row_wise_sum,row_wise_sum)
+
+# To filter where the inclusion criteria are met and additionally the exclusion criteria is met. 
+add_lit <- filter(row_wise_sum, row_wise_sum == '3' & `Conceptua?` == '1')
+
+#----
+traffic_light$names <- c("0", "1", "2", "3") # Because I filtered 7 additional papers that fit all inclusion and the exclusion criteria
+
+#kat <- c(1,1,1,1)
+#value <- c(traffic_light$n[1],traffic_light$n[2], traffic_light$n[3], traffic_light$n[4])
+#number <- c("0","1","2","3")
+#criteria <- c("Concept or \nReview", "Concept or \nReview")
+
+
+#stack_traffic <- data.frame(kat, value, number)
+
+traffic_light_plot <- ggplot(traffic_light,aes(x="", y=n ,fill= row_wise_sum)) +
+  geom_bar(stat = "identity", width =1) +
+  coord_polar("y", start = 0) +
+  #scale_fill_discrete(name="Times...", labels = traffic_light$names) +
+  scale_fill_wsj(name="Criteria met", labels = traffic_light$names) +
+  theme_fivethirtyeight() +
+  labs(subtitle = "How many abstracts met 0, 1, 2 or 3 inclusion criteria?", caption = "232 abstracts were screened. Only those which fit all three inclusion criteria were added \nto the assessed literature. This was true for 68 articles. 7 of them additionally fit the exclusion criteria, namely that they \nwere either conceptual papers or review papers. However, as these 7 papers are closely related to this topic, \nthey were considered in the introduction of the paper as related papers. As for the quantitative analysis, 61 papers remained.")  
+  
+
+library(patchwork)
+patch <- inclusion + exclusion +
+  plot_layout(widths = c(2.5,1,1))
+
+inclusion + exclusion + traffic_light_plot + 
+  plot_layout(widths = c(3,1,2.5))
+```
+
+```{r }
+library(data.table)
+
+ops.mat <-
+  matrix(c(392,  114,  250, 115, 115,  78,
+           2349, 560,  428, 286, 226, 173,
+           4037, 1215, 817, 879, 479, 337,
+           966,  592,  142, 256,  90, 407,
+           1,1,1,1,1,1,
+           1,1,1,1,1,1
+           ),
+         nrow=6, byrow=TRUE)
+
+project.node.totals <- c(28047, 79005, 140853, 29529)
+
+rownames(ops.mat) <- c("Modelled data","Historical data", "Other existing data", "Expert Interview/Survey/Workshop", "Stakeholder Interview/Survey/Workshop", "Extensive literature review")
+colnames(ops.mat) <- c("Impact \nChains","Simulations","Graph/\nNetwork-based","Models","Qualitative\n Evaluation","Fuzzy \nMethods")
+
+scale.max.1 <- function(x) x / max(x)
+ops.rate.mat <- scale.max.1(apply(ops.mat, 2, '/', project.node.totals))
+
+ops.rate.df <- data.frame(melt(ops.rate.mat, varnames=c("parser", "op"), value.name = "rate"))
+ggplot(data=ops.rate.df, aes(op, parser)) + geom_point(aes(size = rate))
+
+
+colors <- pals::parula(10)[c(1,4,7,9)]
+
+ ggplot(ops.rate.df, aes(op, parser)) +  ggtitle("Methods and source information") +
+                   geom_point(colour = colors[[1]], aes(size = rate)) +
+  scale_fill_wsj() +
+  theme_fivethirtyeight() 
+```
+```{r Scale and Sector}
+
+
+
+
+scale_sector <- 
+
+
+
+
+theme_update(plot.title = element_text(hjust = 0.5))
+
+#-----------
+xx <- with(scale_sector, table(Scale, Sector))
+scale_sector<-data.frame(xx)
+
+library(plyr)
+scale_sector.count = count(scale_sector)
+
+p<-ggplot(scale_sector,aes(x = Scale, y = Freq, fill = Sector))+geom_bar(stat="identity", width=0.5)+ggtitle("Assessment scale and assessed sector")+xlab(" ")+ylab("Number of articles")+
+  scale_fill_wsj() +
+  theme_minimal() +
+  theme(legend.position="bottom") +
+  labs(fill = "Sector", subtitle = "* Multiple answers possible")
+
+p
+
+
+
+```
+
+```{r flowchart}
+library(DiagrammeR)
+grViz("
+digraph test {
+  node[shape = box]
+  Scopus;Web of Science
+  
+  node[shape = circle]
+  262; 40
+  
+  # add edge statement
+  Scopus -> 262; Web of Science ->40
+}
+")
+
 ```
 
 ```{r stef}
@@ -305,7 +746,6 @@ ggplot(Hitze_P1rcp45q05) +
     axis.ticks.y = element_blank()
   )+
 theme_tufte()
-```
 ```
 
 ```{r chord diagram}
