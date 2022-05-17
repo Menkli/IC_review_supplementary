@@ -53,9 +53,6 @@ World$count[World$sovereignt %in% Names_2]<- 2
 World$count[World$sovereignt %in% Names_3]<- 3
 World$count[World$sovereignt %in% Names_8]<- 8
 
-#st_write(World, dsn="C:/Users/b1019175/Documents/UNCHAIN_studyareas_test2.shp", driver="ESRI Shapefile", overwrite_layer = TRUE)
-
-
 ```
 
 ```{r map, fig.height=7, fig.width=12}
@@ -102,15 +99,29 @@ spatial <- spatial[-c(10, 29), ]
 #names(Global)<-c("sovereignt","count","continent","cont_nr")
 #spatial<-rbind(spatial,Global)
 
+
+#write.csv(spatial, "spatial.csv", row.names = FALSE)
+#getwd()
+spatial_2 <- read.csv("spatial.csv")
+
+spatial_2
+
 #Make the plot
-map<-ggplot(spatial,aes(x=count, y=reorder(sovereignt, count), fill = continent))+geom_bar(stat="identity", width=0.7)+ggtitle("Assessment location")+xlab("")+ylab("")+
+map<-ggplot(spatial_2,aes(x=count, y=reorder(sovereignt, count), fill = continent))+
+  geom_bar(stat="identity", width=0.7)+
+  ggtitle("RQ 1.1 Assessment location")+xlab("")+ylab("")+
   scale_fill_wsj() +
   theme_minimal() +
-  facet_grid(spatial$cont_nr~., scales ="free",space="free")+
+  facet_grid(spatial_2$cont_nr~., scales ="free",space="free")+
   labs(fill = " ") +
-  theme(strip.text.y=element_blank())
+  theme(strip.text.y=element_blank()) +
+  theme(legend.position="bottom") +
+  scale_x_continuous(breaks=0:10)
   
 map
+
+
+
 ```
 
 ```{r risk}
@@ -143,8 +154,8 @@ p<-ggplot(data=years_df, aes(x=year, y=times)) +
 p
 
 df <- data.frame(
-  group = c(AR4, AR5, AR4, None, NAP, AR5, None, None, None, AR5, None, None, AR4, None, None, None, None, AR5, NAP, None, NAP, NAP, AR5, NAP, AR5, NAP, None, AR5, AR5, AR4, AR4, AR5, AR4, AR4, AR5, AR4, AR4, AR5),
-  value = as.factor(c(2015, 2018, 2018, 2014, 2016, 2018, 2015, 2018, 2018, 2017, 2018, 2018, 2012, 2018, 2015, 2018, 2010, 2016, 2017, 2014, 2019, 2013, 2015, 2019, 2018, 2019, 2013, 2019, 2016, 2014, 2014, 2018, 2014, 2016, 2018, 2018, 2015, 2019))
+  group = c(AR4, AR5, AR4, None, NAP, AR5, None, None, None, AR5, None, None, AR4, None, None, None, None, AR5, NAP, None, NAP, NAP, AR5, NAP, AR5, NAP, None, AR5, AR5, AR4, AR4, AR5, AR4, AR4, AR5, AR4, AR4, AR5, None, None, AR4, None, None, None, None),
+  value = as.factor(c(2015, 2018, 2018, 2014, 2016, 2018, 2015, 2018, 2018, 2017, 2018, 2018, 2012, 2018, 2015, 2018, 2010, 2016, 2017, 2014, 2019, 2013, 2015, 2019, 2018, 2019, 2013, 2019, 2016, 2014, 2014, 2018, 2014, 2016, 2018, 2018, 2015, 2019, 2018, 2014, 2017, 2018, 2019, 2016, 2018))
   )
 df
 
@@ -171,7 +182,7 @@ df<-data.frame(tbl)
 
 p<-ggplot(df,aes(factor(value), Freq, fill = group))+geom_bar()+ggtitle("Definitions over time")+xlab("Definition")+ylab("Usage per year")
 
-p<-ggplot(df,aes(x = value, y = Freq, fill = group))+geom_bar(stat="identity", width=0.5)+ggtitle("Risk concepts and number of articles")+xlab(" ")+ylab("Number of articles")+
+p<-ggplot(df,aes(x = value, y = Freq, fill = group))+geom_bar(stat="identity", width=0.5)+ggtitle("RQ 1.4 Risk concepts over time")+xlab(" ")+ylab("Number of articles")+
   scale_fill_wsj() +
   theme_minimal() +
   theme(legend.position="bottom") +
@@ -354,7 +365,7 @@ hazard<-data.frame(names=c("Changed precipitation patterns",
                    level=as.character(c(20,20,10,1,1,2,0,0,0,1,1,0,1,1,5)))
 
 #Make the plot
-map<-ggplot(hazard,aes(x=value, y=reorder(names,value), fill=level))+geom_bar(stat="identity", width=0.7)+ggtitle("Assessed hazards/climate impacts")+xlab("")+ylab("")+
+map<-ggplot(hazard,aes(x=value, y=reorder(names,value), fill=level))+geom_bar(stat="identity", width=0.7)+ggtitle("RQ 1.3. Assessed hazards/climate impacts")+xlab("")+ylab("")+
   scale_fill_wsj() +
   theme_minimal() +
   facet_grid(hazard$level~., scales ="free",space="free")+
@@ -674,12 +685,48 @@ colors <- pals::parula(10)[c(1,4,7,9)]
   scale_fill_wsj() +
   theme_fivethirtyeight() 
 ```
-```{r Scale and Sector}
+```{r Scale and Sector, fig.width=8}
 
 
 
 
-scale_sector <- 
+scale_sector <- data.frame(
+  stringsAsFactors = FALSE,
+                           Scale = c("Local","Sub-national",
+                                       "National","Sub-national","Urban area/City",
+                                       "National","National","Sub-national",
+                                       "National","Sub-national","Sub-national",
+                                       "National","Sub-national",
+                                       "Transnational","Sub-national","Global",
+                                       "Local","Sub-national","Sub-national",
+                                       "Urban area/City","Local",NA,
+                                       "Global","Sub-national","Transnational",
+                                       NA,"Transnational","Local",
+                                       "Sub-national","Sub-national",
+                                       "Urban area/City","Transnational",
+                                       "Local","Transnational","Sub-national",
+                                       "Sub-national","Sub-national","National",
+                                       "National","Sub-national",
+                                       "Transnational","Local","Urban area/City",
+                                       "Transnational","Urban area/City",NA,
+                                       "National"),
+                           Sector = c("Critical Infrastructure","Multiple",
+                                       "Multiple","Agriculture, Food Security","Environment, Urban living",
+                                       NA,"Water","Water","Water",
+                                       "Environment, Urban living","Water","Critical Infrastructure",
+                                       "Water",NA,"Agriculture, Food Security","Multiple",
+                                       "Critical Infrastructure","Water",
+                                       "Environment, Urban living","Critical Infrastructure",
+                                       "Critical Infrastructure","Agriculture, Food Security",
+                                       "Agriculture, Food Security","Multiple","Multiple","Water",
+                                       "Multiple",NA,NA,"Water",
+                                       "Critical Infrastructure","Agriculture, Food Security",
+                                       "Critical Infrastructure","Multiple",NA,NA,
+                                       "Critical Infrastructure",NA,"Agriculture, Food Security",
+                                       "Agriculture, Food Security","Water",
+                                       "Critical Infrastructure","Agriculture, Food Security","Agriculture, Food Security",NA,
+                                       "Environment, Urban living","Environment, Urban living")
+                )
 
 
 
@@ -692,18 +739,135 @@ scale_sector<-data.frame(xx)
 
 library(plyr)
 scale_sector.count = count(scale_sector)
-
-p<-ggplot(scale_sector,aes(x = Scale, y = Freq, fill = Sector))+geom_bar(stat="identity", width=0.5)+ggtitle("Assessment scale and assessed sector")+xlab(" ")+ylab("Number of articles")+
+positions = c("Global","Transnational","National","Sub-national","Urban area/City","Local")
+p<-ggplot(scale_sector,aes(x = Scale, y = Freq, fill = Sector))+
+  geom_bar(stat="identity", width=0.5)+
+  ggtitle("RQ 1.2 Assessment scale and assessed sector")+xlab(" ")+ylab("Number of articles")+
   scale_fill_wsj() +
   theme_minimal() +
   theme(legend.position="bottom") +
-  labs(fill = "Sector", subtitle = "* Multiple answers possible")
+  labs(fill = "Sector", subtitle = "* Multiple answers possible")+
+  scale_x_discrete(limits = positions)
 
 p
 
 
 
 ```
+```{r methods and information sources, fig.width=7, fig.height=6}
+
+
+library(ggmosaic)
+
+# Set up the vectors                           
+methods <- c("Impact Chains (8)","Qualitative models of \ncause and effect (17)","Quantitative models \nand simulations (28)")
+information <- c("Extensive \nliterature review","Modelled data","Measured or \nsurveyed data","Experts/\nStakeholders")
+
+# Create the comporessed data frame
+df <- expand.grid(methods, information, stringsAsFactors = TRUE)
+#df$value <- c(16,83,100,100,47,11,17,76,17,53,64,10)    
+df$value <- c(1,8,5,5,2,15,7,3,18,7,13,3)
+df.expanded <- df[rep(row.names(df), df$value), 1:2]
+
+#		    Lit	Model	Survey	Exp
+#IC	        1 	5	6	7
+#Other qual	8	2	3	13
+#Simul	      5	15	18	3
+
+
+#Plot the Data
+ggplot(data = df.expanded) +
+  geom_mosaic(aes(x = product(Var2,Var1), fill = Var2)) + 
+  ggsave("mosaic.png") +
+  scale_fill_wsj() +
+  theme_minimal() +
+  theme(legend.position="bottom") +
+  labs(title="RQ 2 Methods and information sources", fill = "Information \nsource", subtitle = "One article can have multiple information sources and methods. \nThe bar widths are scaled according to the number of articles per category.", y="",x="") +
+  geom_text(data = layer_data(last_plot(), 1) %>% filter(.wt > 0),
+             aes(x = (xmin + xmax) / 2,
+                 y = (ymin + ymax) / 2,
+                 label = .wt), color="white", size=4.5)
+
+
+```
+```{r challenges and opportunities, fig.height=8, fig.width=12}
+
+IC_title <- "Impact Chains"
+Qual_title <- "Qualitative models of \ncause and effect"
+Quan_title <- "Quantitative models \nand simunlations"
+label <- c("Challenges","Opportunities")
+             
+           
+categories <- c("Stakeholder involvement","Cause effect identification","Communication of concepts \nand results","Quantification of system \nelements and interrelations", "Data gaps","Evaluation and \validation options")
+
+#IC____________________________
+# Create the comporessed data frame
+df <- expand.grid(label, categories, stringsAsFactors = TRUE)
+
+df$value <- c(4,4,2,2,2,5,0,1,4,0,0,1)
+df.expanded <- df[rep(row.names(df), df$value), 1:2]
+
+#Plot the Data
+ic <- ggplot(data = df.expanded) +
+  geom_mosaic(aes(x = product(Var2,Var1), fill = Var2)) + 
+  ggsave("mosaic.png") +
+  scale_fill_wsj() +
+  theme_minimal() +
+  theme(legend.position="bottom") +
+  labs(title="RQ 3 Challenges and opportunities of different methods", fill = "Topic", subtitle = "One article can have multiple challenges, opportunities and methods. \nThe bar widths are scaled according to the challenges/opportunities ratio.", y="",x=IC_title) +
+  theme(title=element_text(size=17),plot.subtitle=element_text(size=14), axis.text=element_text(size=13),
+        axis.title=element_text(size=13), legend.text = element_text(size=13)) +
+  geom_text(data = layer_data(last_plot(), 1) %>% filter(.wt > 0),
+             aes(x = (xmin + xmax) / 2,
+                 y = (ymin + ymax) / 2,
+                 label = .wt), color="white", size=5)
+
+#Qualitative____________________________________
+df <- expand.grid(label, categories, stringsAsFactors = TRUE)
+
+df$value <- c(6,5,1,6,3,12,2,1,1,2,2,3)
+df.expanded <- df[rep(row.names(df), df$value), 1:2]
+
+#Plot the Data
+qual <- ggplot(data = df.expanded) +
+  geom_mosaic(aes(x = product(Var2,Var1), fill = Var2),show.legend = FALSE) + 
+  ggsave("mosaic.png") +
+  scale_fill_wsj() +
+  theme_minimal() +
+  scale_y_productlist(labels = NULL) +
+  labs( y="",x=Qual_title) +
+  theme(axis.title=element_text(size=13),axis.text=element_text(size=13)) +
+  geom_text(data = layer_data(last_plot(), 1) %>% filter(.wt > 0),
+             aes(x = (xmin + xmax) / 2,
+                 y = (ymin + ymax) / 2,
+                 label = .wt), color="white", size=5)
+
+#Quantitative________________________________________
+df <- expand.grid(label, categories, stringsAsFactors = TRUE)
+
+df$value <- c(4,4,5,7,3,13,6,5,4,2,8,4)
+df.expanded <- df[rep(row.names(df), df$value), 1:2]
+
+#Plot the Data
+quan <- ggplot(data = df.expanded) +
+  geom_mosaic(aes(x = product(Var2,Var1), fill = Var2),show.legend = FALSE) +
+  ggsave("mosaic.png") +
+  scale_fill_wsj() +
+  theme_minimal() +
+  scale_y_productlist(labels = NULL) +
+  labs( y="",x=Quan_title) +
+  theme(axis.title=element_text(size=13),axis.text=element_text(size=13)) +
+  geom_text(data = layer_data(last_plot(), 1) %>% filter(.wt > 0),
+             aes(x = (xmin + xmax) / 2,
+                 y = (ymin + ymax) / 2,
+                 label = .wt), color="white", size=5)
+  
+library(patchwork)
+
+ic + qual + quan +
+  plot_layout(widths = c(1,1,1))
+```
+
 
 ```{r flowchart}
 library(DiagrammeR)
